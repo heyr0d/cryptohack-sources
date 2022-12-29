@@ -1,0 +1,40 @@
+# codigo de prueba que demuestra cómo se puede utilizar la criptografía de curva elíptica para cifrar y descifrar un mensaje. La ventaja de usar ECDSA
+# es que las claves son pequeñas en comparacion con otros algoritmos de criptografia lo que permite un mejor uso en entornos de bajos recursos, como
+# dispositivos moviles o incluso sensores.
+
+import base64
+import ecdsa
+import hashlib
+
+# Generamos un par de claves privada y pública utilizando el esquema de cifrado de curva elíptica secp256k1
+sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
+vk = sk.get_verifying_key()
+
+# Codificamos la clave pública en formato Base64 para facilitar su transmisión
+vk_b64 = base64.b64encode(vk.to_string()).decode()
+
+# El mensaje a cifrar
+mensaje = "Hola, esto es un mensaje de ejemplo"
+
+# Firmamos el mensaje con la clave privada y codificamos el resultado en formato Base64
+firma = base64.b64encode(sk.sign(mensaje.encode())).decode()
+
+# Creamos el mensaje cifrado a partir de la clave pública, la firma y el mensaje
+mensaje_cifrado = vk_b64 + "." + firma + "." + mensaje
+
+# Mostramos el mensaje cifrado
+print("Mensaje cifrado:", mensaje_cifrado)
+
+# Ahora vamos a descifrar el mensaje
+# Separamos la clave pública, la firma y el mensaje del mensaje cifrado
+vk_b64, firma, mensaje = mensaje_cifrado.split(".")
+
+# Convertimos la clave pública codificada en formato Base64 a un objeto VerifyingKey de ECDSA
+vk = ecdsa.VerifyingKey.from_string(base64.b64decode(vk_b64), curve=ecdsa.SECP256k1)
+
+# Verificamos la firma del mensaje con la clave pública
+try:
+  vk.verify(base64.b64decode(firma), mensaje.encode())
+  print("Mensaje válido")
+except ecdsa.BadSignatureError:
+  print("Mensaje inválido")
