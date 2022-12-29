@@ -1,0 +1,63 @@
+# Este código cifra mi nombre con ecdsa
+
+# Primero, necesitamos importar las librerías necesarias
+import ecdsa
+
+# Creamos una clave privada y una clave pública
+sk = ecdsa.SigningKey.generate(curve=ecdsa.NIST256p)
+vk = sk.get_verifying_key()
+
+# Codificamos el mensaje que queremos firmar
+message = "ROD".encode()
+
+# Firmamos el mensaje utilizando la clave privada
+signature = sk.sign(message)
+
+# Verificamos la firma utilizando la clave pública
+vk.verify(signature, message)
+
+# A continuación el mismo codigo pero agregando algo de seguridad, protegiendo la clave privada.
+
+# Primero, necesitamos importar las librerías necesarias
+import ecdsa
+import getpass
+import base64
+import os
+from cryptography.fernet import Fernet
+
+# Pedimos al usuario que ingrese una contraseña para proteger la clave privada
+password = getpass.getpass("Ingresa una contraseña para proteger la clave privada: ")
+
+# Creamos una clave privada y una clave pública
+sk = ecdsa.SigningKey.generate(curve=ecdsa.NIST256p)
+
+# Ciframos la clave privada utilizando la contraseña del usuario
+fernet = Fernet(base64.b64encode(password.encode()))
+encrypted_key = fernet.encrypt(sk.to_bytes())
+
+# Guardamos la clave privada cifrada en un archivo
+with open("private_key.bin", "wb") as f:
+    f.write(encrypted_key)
+
+# Generamos la clave pública a partir de la clave privada
+vk = sk.get_verifying_key()
+
+# Pedimos al usuario que ingrese la contraseña para desencriptar la clave privada
+password = getpass.getpass("Ingresa la contraseña para desencriptar la clave privada: ")
+
+# Leemos la clave privada cifrada del archivo
+with open("private_key.bin", "rb") as f:
+    encrypted_key = f.read()
+
+# Desencriptamos la clave privada utilizando la contraseña del usuario
+fernet = Fernet(base64.b64encode(password.encode()))
+sk = ecdsa.SigningKey.from_bytes(fernet.decrypt(encrypted_key))
+
+# Codificamos el mensaje que queremos firmar
+message = "ROD".encode()
+
+# Firmamos el mensaje utilizando la clave privada
+signature = sk.sign(message)
+
+# Verificamos la firma utilizando la clave pública
+vk.verify(signature, message)
